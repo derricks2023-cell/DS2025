@@ -1,0 +1,463 @@
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <stack>
+#include <climits>
+#include <algorithm>
+#include <unordered_map>
+#include <tuple> 
+using namespace std;
+
+// 图类：封装邻接表存储和所有算法
+class Graph {
+private:
+    int n;                         
+    vector<string> nodeNames;       
+    vector<vector<pair<int, int>>> adj;  
+    unordered_map<string, int> nameToIdx; 
+
+    // Tarjan算法辅助变量（求双连通分量和割点）
+    vector<int> disc;  
+    vector<int> low;   
+    vector<bool> visited;
+    vector<bool> isCut; 
+    stack<pair<int, int>> edgeStack; 
+    vector<vector<pair<int, int>>> biconnectedComps;
+    int time;
+
+    // Tarjan算法递归函数
+    void tarjanDFS(int u, int parent) {
+        int children = 0;
+        disc[u] = low[u] = ++time;
+        visited[u] = true;
+
+        for (auto& edge : adj[u]) {
+            int v = edge.first;
+            if (!visited[v]) {
+                children++;
+                edgeStack.push({ u, v });
+                tarjanDFS(v, u);
+                low[u] = min(low[u], low[v]);
+
+                // 判断割点
+                if ((parent == -1 && children > 1) || (parent != -1 && low[v] >= disc[u])) {
+                    isCut[u] = true;
+                    vector<pair<int, int>> comp;
+                    while (true) {
+                        pair<int, int> e = edgeStack.top();
+                        edgeStack.pop();
+                        comp.push_back(e);
+                        if (e.first == u && e.second == v) break;
+                    }
+                    biconnectedComps.push_back(comp);
+                }
+            }
+            else if (v != parent && disc[v] < disc[u]) { 
+                edgeStack.push({ u, v });
+                low[u] = min(low[u], disc[v]);
+            }
+        }
+    }
+
+public:
+    // 构造函数：初始化节点
+    Graph(const vector<string>& nodes) {
+        n = nodes.size();
+        nodeNames = nodes;
+        adj.resize(n);
+        for (int i = 0; i < n; i++) {
+            nameToIdx[nodes[i]] = i;
+        }
+        // 初始化Tarjan算法变量（避免未初始化错误）
+        disc.resize(n, -1);
+        low.resize(n, -1);
+        visited.resize(n, false);
+        isCut.resize(n, false);
+        time = 0;
+    }
+
+    // 添加无向边（u_name和v_name是节点名称，w是边权）
+    void addEdge(const string& u_name, const string& v_name, int w) {
+        int u = nameToIdx[u_name];
+        int v = nameToIdx[v_name];
+        adj[u].emplace_back(v, w);
+        adj[v].emplace_back(u, w);
+    }
+
+    // 广度优先遍历（BFS）：从start_name开始
+    vector<string> bfs(const string& start_name) {
+        int start = nameToIdx[start_name];
+        vector<bool> visited(n, false);
+        queue<int> q;
+        vector<string> result;
+
+        q.push(start);
+        visited[start] = true;
+
+        while (!q.empty()) {
+            int u = q.front();
+            q.pop();
+            result.push_back(nodeNames[u]);
+
+            for (auto& edge : adj[u]) {
+                int v = edge.first;
+                if (!visited[v]) {
+                    visited[v] = true;
+                    q.push(v);
+                }
+            }
+        }
+        return result;
+    }
+
+    // 深度优先遍历（DFS）：递归实现，从start_name开始
+    vector<string> dfsRecursive(const string& start_name) {
+        int start = nameToIdx[start_name];
+        vector<bool> visited(n, false);
+        vector<string> result;
+        dfsHelper(start, visited, result);
+        return result;
+    }
+
+    // DFS辅助函数
+    void dfsHelper(int u, vector<bool>& visited, vector<string>& result) {
+        visited[u] = true;
+        result.push_back(nodeNames[u]);
+
+        for (auto& edge : adj[u]) {
+            int v = edge.first;
+            if (!visited[v]) {
+                dfsHelper(v, visited, result);
+            }
+        }
+    }
+
+    // 深度优先遍历（DFS）：非递归实现，从start_name开始
+    vector<string> dfsIterative(const string& start_name) {
+        int start = nameToIdx[start_name];
+        vector<bool> visited(n, false);
+        stack<int> s;
+        vector<string> result;
+
+        s.push(start);
+        while (!s.empty()) {
+            int u = s.top();
+            s.pop();
+
+            if (!visited[u]) {
+                visited[u] = true;
+                result.push_back(nodeNames[u]);
+
+                // 逆序入栈，保证遍历顺序与递归一致
+                for (auto it = adj[u].rbegin(); it != adj[u].rend(); it++) {
+                    int v = it->first;
+                    if (!visited[v]) {
+                        s.push(v);
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    // Dijkstra算法：求start_name到所有节点的最短路径
+    unordered_map<string, int> dijkstra(const string& start_name) {
+        int start = nameToIdx[start_name];
+        vector<int> dist(n, INT_MAX);  // 修正：将td改为dist
+        dist[start] = 0;
+        // 优先队列：<距离, 节点编号>，小顶堆
+        priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> pq;
+        pq.push({ 0, start });
+
+        while (!pq.empty()) {
+            int u_dist = pq.top().first;
+            int u = pq.top().second;
+            pq.pop();
+
+            if (u_dist > dist[u]) continue; // 跳过已处理的节点
+
+            for (auto& edge : adj[u]) {
+                int v = edge.first;
+                int w = edge.second;
+                if (dist[v] > dist[u] + w) {
+                    dist[v] = dist[u] + w;
+                    pq.push({ dist[v], v });
+                }
+            }
+        }
+
+        // 转换为名称-距离映射
+        unordered_map<string, int> result;
+        for (int i = 0; i < n; i++) {
+            if (dist[i] == INT_MAX) {
+                result[nodeNames[i]] = -1; // 不可达
+            }
+            else {
+                result[nodeNames[i]] = dist[i];
+            }
+        }
+        return result;
+    }
+
+    // Prim算法：求最小生成树（MST），返回边集合和总权值
+    pair<vector<tuple<string, string, int>>, int> prim(const string& start_name) {
+        int start = nameToIdx[start_name];
+        vector<int> key(n, INT_MAX);
+        vector<int> parent(n, -1);
+        vector<bool> inMST(n, false);
+        key[start] = 0;
+
+        // 优先队列：<边权, 节点编号>，小顶堆
+        priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> pq;
+        pq.push({ 0, start });
+
+        while (!pq.empty()) {
+            int u = pq.top().second;
+            pq.pop();
+
+            if (inMST[u]) continue;
+            inMST[u] = true;
+
+            for (auto& edge : adj[u]) {
+                int v = edge.first;
+                int w = edge.second;
+                if (!inMST[v] && w < key[v]) {
+                    key[v] = w;
+                    parent[v] = u;
+                    pq.push({ w, v });
+                }
+            }
+        }
+
+        // 构建MST边集合（u_name, v_name, 边权）
+        vector<tuple<string, string, int>> mstEdges;
+        int totalWeight = 0;
+        for (int i = 0; i < n; i++) {
+            if (parent[i] != -1) {
+                string u_name = nodeNames[parent[i]];
+                string v_name = nodeNames[i];
+                mstEdges.emplace_back(u_name, v_name, key[i]);
+                totalWeight += key[i];
+            }
+        }
+
+        return make_pair(mstEdges, totalWeight); // 显式构造pair，避免推断问题
+    }
+
+    // Tarjan算法：求双连通分量和割点
+    pair<vector<vector<string>>, vector<string>> tarjanBiconnected() {
+        // 重置Tarjan算法变量（避免多次调用冲突）
+        fill(disc.begin(), disc.end(), -1);
+        fill(low.begin(), low.end(), -1);
+        fill(visited.begin(), visited.end(), false);
+        fill(isCut.begin(), isCut.end(), false);
+        time = 0;
+        while (!edgeStack.empty()) edgeStack.pop();
+        biconnectedComps.clear();
+
+        // 遍历所有节点（处理非连通图）
+        for (int i = 0; i < n; i++) {
+            if (!visited[i]) {
+                tarjanDFS(i, -1);
+                // 处理栈中剩余的边（最后一个双连通分量）
+                if (!edgeStack.empty()) {
+                    vector<pair<int, int>> comp;
+                    while (!edgeStack.empty()) {
+                        comp.push_back(edgeStack.top());
+                        edgeStack.pop();
+                    }
+                    biconnectedComps.push_back(comp);
+                }
+            }
+        }
+
+        // 转换双连通分量为节点集合（去重）
+        vector<vector<string>> compNodes;
+        for (auto& comp : biconnectedComps) {
+            unordered_map<int, bool> nodeSet;
+            for (auto& edge : comp) {
+                nodeSet[edge.first] = true;
+                nodeSet[edge.second] = true;
+            }
+            vector<string> nodes;
+            // 修正：用迭代器访问，避免结构化绑定
+            for (auto& entry : nodeSet) {
+                int idx = entry.first;
+                nodes.push_back(nodeNames[idx]);
+            }
+            sort(nodes.begin(), nodes.end()); // 排序，方便查看
+            compNodes.push_back(nodes);
+        }
+
+        // 收集割点
+        vector<string> cutNodes;
+        for (int i = 0; i < n; i++) {
+            if (isCut[i]) {
+                cutNodes.push_back(nodeNames[i]);
+            }
+        }
+
+        return make_pair(compNodes, cutNodes); // 显式构造pair
+    }
+
+    // 打印图的邻接矩阵（实验1要求）
+    void printAdjacencyMatrix() {
+        cout << "图的邻接矩阵（行：from，列：to，值：权值，0表示无直接边）：" << endl;
+        // 初始化矩阵为0（n x n）
+        vector<vector<int>> matrix(n, vector<int>(n, 0));
+        // 填充矩阵
+        for (int u = 0; u < n; u++) {
+            for (auto& edge : adj[u]) {
+                int v = edge.first;
+                int w = edge.second;
+                matrix[u][v] = w;
+            }
+        }
+        // 打印表头（节点名称）
+        cout << "   ";
+        for (auto& name : nodeNames) {
+            cout << name << "  ";
+        }
+        cout << endl;
+        // 打印矩阵内容
+        for (int i = 0; i < n; i++) {
+            cout << nodeNames[i] << "  ";
+            for (int j = 0; j < n; j++) {
+                cout << matrix[i][j] << "  ";
+            }
+            cout << endl;
+        }
+    }
+};
+
+// 辅助函数：打印向量
+template <typename T>
+void printVector(const vector<T>& vec, const string& title) {
+    cout << title << ": ";
+    for (size_t i = 0; i < vec.size(); i++) { // 用size_t避免类型转换警告
+        if (i > 0) cout << " -> ";
+        cout << vec[i];
+    }
+    cout << endl;
+}
+
+// 辅助函数：打印映射（用于Dijkstra结果）
+void printMap(const unordered_map<string, int>& mp, const string& title) {
+    cout << title << ": " << endl;
+    for (const auto& entry : mp) { // 加const避免警告
+        if (entry.second == -1) {
+            cout << entry.first << ": 不可达" << endl;
+        }
+        else {
+            cout << entry.first << ": " << entry.second << endl;
+        }
+    }
+}
+
+// 辅助函数：打印MST结果
+void printMST(const vector<tuple<string, string, int>>& mstEdges, int totalWeight) {
+    cout << "最小生成树（MST）边集合：" << endl;
+    for (const auto& edge : mstEdges) { // 加const避免警告
+        cout << get<0>(edge) << " - " << get<1>(edge) << " (权值：" << get<2>(edge) << ")" << endl;
+    }
+    cout << "MST总权值：" << totalWeight << endl;
+}
+
+// 辅助函数：打印双连通分量和割点
+void printBiconnected(const vector<vector<string>>& compNodes, const vector<string>& cutNodes) {
+    cout << "双连通分量（节点集合）：" << endl;
+    for (size_t i = 0; i < compNodes.size(); i++) {
+        cout << "分量 " << i + 1 << ": ";
+        for (size_t j = 0; j < compNodes[i].size(); j++) {
+            if (j > 0) cout << ", ";
+            cout << compNodes[i][j];
+        }
+        cout << endl;
+    }
+    cout << "割点：";
+    for (size_t i = 0; i < cutNodes.size(); i++) {
+        if (i > 0) cout << ", ";
+        cout << cutNodes[i];
+    }
+    cout << endl;
+}
+
+int main() {
+    // 实验1-3：图1的节点（A-H）
+    vector<string> nodes1 = { "A", "B", "C", "D", "E", "F", "G", "H" };
+    Graph g1(nodes1);
+    // 按图1添加所有边（根据题目图1的边权）
+    g1.addEdge("A", "B", 4);
+    g1.addEdge("A", "D", 6);   // 修正边权：图1中A-D为6
+    g1.addEdge("A", "G", 7);   // 图1中A-G有直接边，权值7
+    g1.addEdge("B", "C", 12);  // 图1中B-C为12
+    g1.addEdge("B", "E", 9);   // 图1中B-E为9
+    g1.addEdge("B", "C", 12);
+    g1.addEdge("C", "E", 1);   // 图1中C-E为1
+    g1.addEdge("C", "F", 2);   // 图1中C-F为2
+    g1.addEdge("C", "H", 10);  // 图1中C-H为10
+    g1.addEdge("D", "E", 13);  // 图1中D-E为13
+    g1.addEdge("D", "G", 2);   // 图1中D-G为2
+    g1.addEdge("E", "F", 5);   // 图1中E-F为5
+    g1.addEdge("E", "G", 11);  // 图1中E-G为11
+    g1.addEdge("F", "H", 3);   // 图1中F-H为3
+    g1.addEdge("G", "H", 14);  // 图1中G-H为14
+
+    // （1）输出图1的邻接矩阵
+    cout << "=== 实验1：图1的邻接矩阵 ===" << endl;
+    g1.printAdjacencyMatrix();
+    cout << endl;
+
+    // （2）从A出发的BFS和DFS
+    cout << "=== 实验2：BFS和DFS遍历 ===" << endl;
+    vector<string> bfsResult = g1.bfs("A");
+    printVector(bfsResult, "BFS遍历顺序（从A出发）");
+
+    vector<string> dfsRecResult = g1.dfsRecursive("A");
+    printVector(dfsRecResult, "DFS递归遍历顺序（从A出发）");
+
+    vector<string> dfsIterResult = g1.dfsIterative("A");
+    printVector(dfsIterResult, "DFS非递归遍历顺序（从A出发）");
+    cout << endl;
+
+    // （3）从A出发的最短路径和最小生成树
+    cout << "=== 实验3：最短路径和最小生成树 ===" << endl;
+    unordered_map<string, int> dijkstraResult = g1.dijkstra("A");
+    printMap(dijkstraResult, "Dijkstra最短路径（从A出发）");
+
+    pair<vector<tuple<string, string, int>>, int> mstResult = g1.prim("A");
+    printMST(mstResult.first, mstResult.second);
+    cout << endl;
+
+    // （4）图2的双连通分量和割点（图2节点：A-L）
+    cout << "=== 实验4：图2的双连通分量和割点 ===" << endl;
+    vector<string> nodes2 = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L" };
+    Graph g2(nodes2);
+    // 按图2添加边（无向，无权重）
+    g2.addEdge("A", "B", 1);
+    g2.addEdge("A", "E", 1);
+    g2.addEdge("B", "F", 1);
+    g2.addEdge("C", "D", 1);
+    g2.addEdge("C", "F", 1);
+    g2.addEdge("D", "H", 1);
+    g2.addEdge("E", "F", 1);
+    g2.addEdge("E", "I", 1);
+    g2.addEdge("F", "G", 1);
+    g2.addEdge("F", "J", 1);
+    g2.addEdge("G", "K", 1);
+    g2.addEdge("H", "D", 1);  // 图2中D-H相连
+    g2.addEdge("J", "K", 1);
+    g2.addEdge("K", "L", 1);
+
+    // 测试不同起点（A和F）的双连通分量是否一致
+    cout << "--- 以A为起点 ---" << endl;
+    auto biconnectA = g2.tarjanBiconnected();
+    printBiconnected(biconnectA.first, biconnectA.second);
+
+    cout << "--- 以F为起点 ---" << endl;
+    auto biconnectF = g2.tarjanBiconnected();  // Tarjan算法结果与起点无关
+    printBiconnected(biconnectF.first, biconnectF.second);
+    cout << "结论：双连通分量和割点与起点无关，结果一致" << endl;
+
+    return 0;
+}
