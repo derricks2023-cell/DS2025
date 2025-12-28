@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white"><h5><i class="fas fa-sign-out-alt"></i> 借书处理</h5></div>
+            <div class="card-body">
+                <form action="/api/borrow" method="POST">
+                    <div class="mb-3">
+                        <label>读者证号/条码</label>
+                        <input type="text" class="form-control" placeholder="扫描或输入读者ID" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>图书条码/RFID</label>
+                        <input type="text" class="form-control" placeholder="扫描图书条码" required>
+                    </div>
+                    <button class="btn btn-primary w-100">确认借出</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-secondary text-white"><h5><i class="fas fa-boxes"></i> 馆藏盘点/状态变更</h5></div>
+            <div class="card-body">
+                <select class="form-select mb-3" id="statusSelect">
+                    <option>在馆</option>
+                    <option>丢失</option>
+                    <option>损毁</option>
+                    <option>维修中</option>
+                </select>
+                <input type="text" class="form-control mb-3" placeholder="输入图书编号进行调拨">
+                <button class="btn btn-outline-secondary w-100">更新状态</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

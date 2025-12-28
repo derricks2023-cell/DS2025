@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>图书资源管理</h3>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">+ 入库新书</button>
+</div>
+
+<div class="card p-3">
+    <table class="table table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>ID</th><th>书名</th><th>作者</th><th>分类</th><th>库存</th><th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for b in books %}
+            <tr>
+                <td>{{ b.id }}</td>
+                <td><strong>{{ b.title }}</strong></td>
+                <td>{{ b.author }}</td>
+                <td><span class="badge bg-secondary">{{ b.category }}</span></td>
+                <td>{{ b.stock }}</td>
+                <td>
+                    <a href="/delete_book/{{ b.id }}" class="text-danger" onclick="return confirm('确定删除?')"><i class="fas fa-trash"></i></a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="addModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form class="modal-content" action="/books" method="POST">
+            <div class="modal-header"><h5>新增图书</h5></div>
+            <div class="modal-body">
+                <input type="text" name="title" class="form-control mb-2" placeholder="书名" required>
+                <input type="text" name="author" class="form-control mb-2" placeholder="作者">
+                <input type="text" name="category" class="form-control mb-2" placeholder="分类">
+                <input type="number" name="stock" class="form-control mb-2" placeholder="库存数量">
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">保存入库</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+<button class="btn btn-sm btn-info text-white" data-bs-toggle="modal" data-bs-target="#editModal{{ b.id }}">
+    <i class="fas fa-edit"></i> 编辑
+</button>
+
+<div class="modal fade" id="editModal{{ b.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <form class="modal-content" action="/edit_book" method="POST">
+            <input type="hidden" name="id" value="{{ b.id }}">
+            <div class="modal-header"><h5>编辑书籍信息</h5></div>
+            <div class="modal-body">
+                <div class="mb-3">书名：<input type="text" name="title" class="form-control" value="{{ b.title }}"></div>
+                <div class="mb-3">作者：<input type="text" name="author" class="form-control" value="{{ b.author }}"></div>
+                <div class="mb-3">库存：<input type="number" name="stock" class="form-control" value="{{ b.stock }}"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">保存修改</button>
+            </div>
+        </form>
+    </div>
+</div>

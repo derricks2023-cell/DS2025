@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智阅图书馆管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --sidebar-width: 240px; }
+        body { background-color: #f8f9fa; }
+        .navbar { background-color: #2c3e50 !important; z-index: 1050; }
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            top: 0; left: 0;
+            padding-top: 60px;
+            background: white;
+            border-right: 1px solid #dee2e6;
+            z-index: 1000;
+        }
+        .nav-link {
+            color: #444;
+            padding: 12px 20px;
+            transition: all 0.2s;
+            border-left: 4px solid transparent;
+        }
+        .nav-link:hover {
+            background: #f1f3f5;
+            color: #007bff;
+            border-left: 4px solid #007bff;
+        }
+        .main-content { margin-left: var(--sidebar-width); padding: 90px 30px 30px; }
+        .nav-divider { font-size: 11px; color: #999; padding: 15px 20px 5px; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-dark fixed-top shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="/"><i class="fas fa-university me-2"></i>智阅图书馆系统</a>
+            <span class="text-white-50 small">管理员工作站</span>
+        </div>
+    </nav>
+
+    <div class="sidebar">
+        <div class="nav flex-column">
+            <div class="nav-divider">核心管理</div>
+            <a class="nav-link" href="/"><i class="fas fa-home me-2"></i>仪表盘首页</a>
+            <a class="nav-link" href="/books"><i class="fas fa-book me-2"></i>图书编目管理</a>
+            <a class="nav-link" href="/users"><i class="fas fa-users-cog me-2"></i>读者会员管理</a>
+
+            <div class="nav-divider">流通业务</div>
+            <a class="nav-link" href="/borrow"><i class="fas fa-exchange-alt me-2"></i>借还工作台</a>
+
+            <div class="nav-divider">系统维护</div>
+            <a class="nav-link" href="/admin/settings"><i class="fas fa-sliders-h me-2"></i>借阅参数配置</a>
+            <a class="nav-link" href="/logs"><i class="fas fa-history me-2"></i>系统操作日志</a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

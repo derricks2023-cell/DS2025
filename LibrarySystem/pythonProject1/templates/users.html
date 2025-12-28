@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="section-title">读者会员管理</h3>
+    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addUserModal">+ 新增读者</button>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>ID</th><th>姓名</th><th>联系电话</th><th>注册日期</th><th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>{{ u.id }}</td>
+                    <td><strong>{{ u.username }}</strong></td>
+                    <td>{{ u.phone }}</td>
+                    <td>{{ u.reg_date }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editUser{{ u.id }}">编辑</button>
+                    </td>
+                </tr>
+
+                <div class="modal fade" id="editUser{{ u.id }}" tabindex="-1">
+                    <div class="modal-dialog">
+                        <form class="modal-content" action="/edit_user" method="POST">
+                            <div class="modal-header"><h5>修改读者信息</h5></div>
+                            <div class="modal-body">
+                                <input type="hidden" name="id" value="{{ u.id }}">
+                                <div class="mb-3">
+                                    <label>姓名</label>
+                                    <input type="text" name="username" class="form-control" value="{{ u.username }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label>电话</label>
+                                    <input type="text" name="phone" class="form-control" value="{{ u.phone }}">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">保存修改</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="addUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form class="modal-content" action="/users" method="POST">
+            <div class="modal-header"><h5>新读者注册</h5></div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label>读者姓名</label>
+                    <input type="text" name="username" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label>联系电话</label>
+                    <input type="text" name="phone" class="form-control">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-success">确认注册</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

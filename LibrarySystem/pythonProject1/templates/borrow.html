@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h3 class="section-title"><i class="fas fa-exchange-alt me-2"></i>流通与借还工作台</h3>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-primary text-white fw-bold py-3">
+                <i class="fas fa-edit me-1"></i> 新增借阅登记
+            </div>
+            <div class="card-body p-4">
+                <form action="/api/borrow" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted">读者 ID</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="fas fa-user-tag"></i></span>
+                            <input type="number" name="user_id" class="form-control" placeholder="示例: 1" required>
+                        </div>
+                        <div class="form-text">请在“读者管理”中确认ID</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted">图书条码 (Barcode)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="fas fa-barcode"></i></span>
+                            <input type="text" name="barcode" class="form-control" placeholder="输入或扫描条码" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold mt-2 shadow-sm">
+                        确认借出登记
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card border-0 bg-light">
+            <div class="card-body">
+                <h6 class="fw-bold"><i class="fas fa-info-circle me-1 text-info"></i> 业务规则说明</h6>
+                <ul class="small text-muted ps-3 mb-0">
+                    <li>标准借阅时长：30天</li>
+                    <li>逾期费率：按系统参数设置执行</li>
+                    <li>还书时请核对条码是否完好</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold">当前流通记录</h5>
+                    <span class="badge bg-secondary">实时数据</span>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">读者</th>
+                                <th>书籍名称</th>
+                                <th>状态</th>
+                                <th>逾期费</th>
+                                <th class="text-center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in records %}
+                            <tr>
+                                <td class="ps-3">
+                                    <div class="fw-bold">{{ r.username }}</div>
+                                    <div class="small text-muted">ID: {{ r.user_id }}</div>
+                                </td>
+                                <td>
+                                    <div class="text-truncate" style="max-width: 200px;">{{ r.title }}</div>
+                                    <div class="small text-primary">应还: {{ r.due_date }}</div>
+                                </td>
+                                <td>
+                                    {% if r.status == '借出' %}
+                                        {% if r.overdue_days > 0 %}
+                                            <span class="badge bg-danger">逾期 {{ r.overdue_days }} 天</span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark">借出中</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-success">已归还</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if r.overdue_days > 0 and r.status == '借出' %}
+                                        <span class="text-danger fw-bold">¥{{ "%.2f"|format(r.overdue_days * 0.5) }}</span>
+                                    {% else %}
+                                        <span class="text-muted">--</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if r.status == '借出' %}
+                                    <a href="/return_book/{{ r.id }}"
+                                       class="btn btn-sm btn-outline-primary px-3"
+                                       onclick="return confirm('确认书籍已完好归还？系统将自动更新库存。')">
+                                        确认归还
+                                    </a>
+                                    {% else %}
+                                    <i class="fas fa-check-double text-success" title="已完成"></i>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">
+                                    <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                    暂无流通记录
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
